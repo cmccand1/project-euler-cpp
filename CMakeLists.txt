@@ -1,38 +1,21 @@
-# Top-level CMake for ProjectEuler_Cpp
-# -----------------------------------------------------------------------------
-#  Structure
-#   1. Minimum + project + policies
-#   2. Global language / standard settings
-#   3. Build options (user toggles)
-#   4. Helper logic (warnings, sanitizers, LTO, tooling, constexpr limits)
-#   5. Dependencies
-#   6. Targets
-#       6.1  Common library (euler_common)
-#       6.2  Problem object libraries aggregation
-#       6.3  Main executable (euler)
-#   7. Tooling (clang-tidy, etc.)
-#   8. Developer summary (optional)
-# -----------------------------------------------------------------------------
-#  Design notes
-#   - Each problem pNNN is an OBJECT library that appends its objects to a
-#     GLOBAL property PROBLEM_OBJECTS. We then link those objects into the
-#     main executable so static registration runs.
-#   - GLOBAL property avoids fragile parent-scope variable plumbing.
-#   - Options are centralized; feature logic is applied in one place for clarity.
-# -----------------------------------------------------------------------------
-
-# 1. Minimum + project + policies ------------------------------------------------
+# ============================================================================
+# 1. Minimum + project + policies
+# ============================================================================
 cmake_minimum_required(VERSION 3.23)
-project(ProjectEuler_Cpp LANGUAGES CXX)
+cmake_policy(SET CMP0135 NEW)
+cmake_policy(SET CMP0167 NEW)
+project(project-euler-cpp LANGUAGES CXX)
 
-cmake_policy(SET CMP0167 NEW) # modern find_package(<PkgName> ...) behavior
-
-# 2. Global language / standard settings -----------------------------------------
+# ============================================================================
+# 2. Global language / standard settings
+# ============================================================================
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 3. Build options (user toggles) ------------------------------------------------
+# ============================================================================
+# 3. Build options (user toggles)
+# ============================================================================
 option(ENABLE_WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
 option(ENABLE_ASAN "Enable AddressSanitizer (+LeakSan if available)" ON)
 option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" ON)
@@ -41,7 +24,9 @@ option(ENABLE_LTO "Enable Link-Time Optimization (IPO) in Release/RelWithDebInfo
 option(ENABLE_CLANG_TIDY "Enable clang-tidy if available" OFF)
 option(ENABLE_CONSTEXPR_LIMIT_TWEAKS "Increase compiler constexpr evaluation limits (may slow builds)" ON)
 
-# 4. Helper logic ----------------------------------------------------------------
+# ============================================================================
+# 4. Helper logic
+# ============================================================================
 # 4.1 Warnings
 set(PROJECT_WARNING_FLAGS)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -96,15 +81,6 @@ endif ()
 add_compile_options(${PROJECT_WARNING_FLAGS} ${SANITIZER_COMPILE_FLAGS} ${CONSTEXPR_LIMIT_FLAGS})
 add_link_options(${SANITIZER_LINK_FLAGS})
 
-# 4.4 Function to apply common compile/link flags to a target
-function(apply_project_defaults tgt)
-    target_compile_options(${tgt} PRIVATE
-            ${PROJECT_WARNING_FLAGS}
-            ${SANITIZER_COMPILE_FLAGS}
-            ${CONSTEXPR_LIMIT_FLAGS}
-    )
-    target_link_options(${tgt} PRIVATE ${SANITIZER_LINK_FLAGS})
-endfunction()
 
 # 4.5 LTO (IPO)
 if (ENABLE_LTO)
@@ -118,7 +94,9 @@ if (ENABLE_LTO)
     endif ()
 endif ()
 
-# 5. Dependencies ----------------------------------------------------------------
+# ============================================================================
+# 5. Dependencies
+# ============================================================================
 find_package(Boost 1.70 REQUIRED)
 include(FetchContent)
 FetchContent_Declare(
@@ -128,15 +106,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-# 6. Targets ---------------------------------------------------------------------
+# ============================================================================
+# 6. Targets
+# ============================================================================
 # 6.1 Common library
 add_library(euler_common STATIC
         src/common/util.cpp
 )
-set_target_properties(euler_common PROPERTIES OUTPUT_NAME euler_common)
 target_include_directories(euler_common PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(euler_common PUBLIC Boost::boost)
-apply_project_defaults(euler_common)
 
 # 6.2 Problems aggregation
 add_subdirectory(src/problems)
@@ -151,7 +129,10 @@ target_compile_definitions(euler PRIVATE ANSWERS_TXT_PATH="${CMAKE_SOURCE_DIR}/a
 include(CTest)
 add_subdirectory(tests)
 
-# 7. Tooling ---------------------------------------------------------------------
+
+# ============================================================================
+# 7. Tooling
+# ============================================================================
 if (ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY_EXE NAMES clang-tidy)
     if (CLANG_TIDY_EXE)
@@ -162,7 +143,9 @@ if (ENABLE_CLANG_TIDY)
     endif ()
 endif ()
 
-# 8. Developer summary -----------------------------------------------------------
+# ============================================================================
+# 8. Developer summary
+# ============================================================================
 message(STATUS "Config summary:")
 message(STATUS "  Build type              : ${CMAKE_BUILD_TYPE}")
 message(STATUS "  Warnings as errors      : ${ENABLE_WARNINGS_AS_ERRORS}")
