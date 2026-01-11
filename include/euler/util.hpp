@@ -53,6 +53,7 @@ constexpr std::array<bool, N + 1> sieve_array() {
 }
 
 constexpr std::size_t digit_count(unsigned long long n) {
+  if (n == 0) return 1;
   std::size_t count = 0;
   while (n > 0) {
     n /= 10;
@@ -62,19 +63,21 @@ constexpr std::size_t digit_count(unsigned long long n) {
 }
 
 inline std::size_t digit_count(cpp_int n) {
+  if (n == 0) return 1;
   std::size_t count = 0;
-  while (n > 0) {
+  while (n > 0 || n < -0) {
     n /= 10;
     ++count;
   }
   return count;
 }
 
+
 /**
  * You already know...
  */
 [[nodiscard]] inline cpp_int factorial(int n) {
-  assert(n > 0);
+  assert(n >= 0);
   cpp_int res = 1;
   for (int i = 2; i <= n; i++) {
     res *= i;
@@ -161,7 +164,7 @@ static std::pair<cpp_int, cpp_int> fib_pair(unsigned long long n) {
   if (n < 2) return false;
   if (n == 2) return true;
   if (n % 2 == 0) return false;
-  for (std::size_t i = 3; i * i < n; i += 2) {
+  for (std::size_t i = 3; i * i <= n; i += 2) {
     if (n % i == 0) return false;
   }
   return true;

@@ -120,6 +120,13 @@ endif ()
 
 # 5. Dependencies ----------------------------------------------------------------
 find_package(Boost 1.70 REQUIRED)
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        # Specify the commit you depend on and update it regularly.
+        URL https://github.com/google/googletest/archive/5376968f6948923e2411081fd9372e71a59d8e77.zip
+)
+FetchContent_MakeAvailable(googletest)
 
 # 6. Targets ---------------------------------------------------------------------
 # 6.1 Common library
@@ -139,8 +146,10 @@ get_property(PROBLEM_OBJECTS GLOBAL PROPERTY PROBLEM_OBJECTS)
 add_executable(euler src/main.cpp ${PROBLEM_OBJECTS})
 target_link_libraries(euler PRIVATE euler_common)
 target_compile_definitions(euler PRIVATE ANSWERS_TXT_PATH="${CMAKE_SOURCE_DIR}/answers.txt")
-target_sources(euler PRIVATE ${PROBLEM_OBJECTS})
-apply_project_defaults(euler)
+
+# 6.4 Tests
+include(CTest)
+add_subdirectory(tests)
 
 # 7. Tooling ---------------------------------------------------------------------
 if (ENABLE_CLANG_TIDY)
